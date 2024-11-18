@@ -1,0 +1,7 @@
+eclipse.preferences.version=1
+encoding//src/model/Card/AdvertisementMC.java=UTF-8
+encoding//src/model/Card/BillMC.java=UTF-8
+encoding//src/model/Card/CharityMC.java=UTF-8
+encoding//src/model/Card/GetPaidByNeighborMC.java=UTF-8
+encoding//src/model/Card/MoveToDealPositionMC.java=UTF-8
+encoding//src/model/Card/PayTheNeighborMC.java=UTF-8

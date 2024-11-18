@@ -1,0 +1,14 @@
+BUILD:
+make all
+
+CLEAR FILES:
+make clean
+
+RUN:
+./parser.out <filename> (compiler)
+./main                  (AVM)
+
+Binary file:
+avm_binary.abc
+
+Liga pragmata douleuoun, entoles praksewn, rohs (break, continue den douleuoun), pinakes.
