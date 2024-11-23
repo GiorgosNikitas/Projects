@@ -1,0 +1,107 @@
+/* ----------------------------------------------- */
+
+/* .book {
+    border-radius: 4px;
+    min-height: 30px;
+    border: none;
+    transition: all 0.5s ease-in-out;
+    display: flex;
+    align-items: center;
+    color: #f5f5f5;
+}
+
+.book:hover {
+    box-shadow: 0 0 20px 0px #2e2e2e3a;
+}
+
+.book .icon {
+    position: absolute;
+    height: 40px;
+    width: 70px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.5s;
+}
+
+.book .text {
+    transform: translateX(55px);
+}
+
+.book:hover .icon {
+    width: 175px;
+}
+
+.book:hover .text {
+    transition: all 0.5s;
+    opacity: 0;
+}
+
+.book:focus {
+    outline: none;
+}
+
+.book:active .icon {
+    transform: scale(0.85);
+} */
+
+/* --------------------------------------------- */
+
+/* Link hover animation */
+
+.light {
+    background-image: linear-gradient(to right,
+    rgb(0, 0, 0),
+    rgb(0, 0, 0) 50%,
+            rgb(179, 159, 159) 50%);
+}
+
+.light::before {
+    background: rgb(0, 0, 0);
+}
+
+.dark {
+    background-image: linear-gradient(to right,
+    rgb(179, 159, 159),
+    rgb(179, 159, 159) 50%,
+            rgb(0, 0, 0) 50%);
+}
+
+.dark::before {
+    background: rgb(179, 159, 159);
+}
+
+.hover-anim {
+    text-decoration: none;
+}
+
+.hover-anim {
+    background-size: 200% 100%;
+    background-position: -100%;
+    display: inline-block;
+    padding: 5px auto;
+    position: relative;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    transition: all 0.3s ease-in-out;
+}
+
+.hover-anim:before {
+    content: '';
+    display: block;
+    position: absolute;
+    bottom: 2px;
+    left: 5%;
+    right: 5%;
+    width: 0;
+    height: 2px;
+    transition: all 0.3s ease-in-out;
+}
+
+.hover-anim:hover {
+    background-position: 0;
+}
+
+.hover-anim:hover::before {
+    width: 90%;
+}
