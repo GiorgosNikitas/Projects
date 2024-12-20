@@ -1,0 +1,427 @@
+package entities;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Random;
+
+public class Hungarian {
+    private float[][] costs;
+    float[][] matrix;
+    private int totalStudents;
+    private int totalTasks;
+    private String[] taskToCourse;
+
+    public static void main(String[] args) {
+        Hungarian hungarianAlgorithm = new Hungarian();
+
+        hungarianAlgorithm.execute();
+    }
+
+    public Hungarian() {
+        totalTasks = (int)CourseManager.totalTas;
+        totalStudents = StudentManager.students.size();
+        costs = new float[totalStudents][totalTasks];
+        taskToCourse = new String[totalTasks]; // !!!!!!!!!!!!!!!
+
+        int current = 0;
+
+        // for each course
+        for (Student student : StudentManager.students) {
+            int currentCourse = 0;
+            ArrayList<Float> taskCost = new ArrayList<>();
+            for (Course course : CourseManager.courses) {
+                String courseName = course.getCourseName();
+                float grade;
+                if (student.courseGrades.get(courseName) != null) {
+                    grade = student.courseGrades.get(courseName);
+                } else {
+                    grade = 0;
+                }
+                // Set very high cost (10) for banned students, so that
+                // they will not be picked by the algorithm
+                for (int i = 0; i < course.getAssistants(); i++) {
+                    if (course.bannedStudents.contains(student)) {
+                        taskCost.add(5F);
+                    } else {
+                        taskCost.add(10 - grade);
+                    }
+
+                    taskToCourse[currentCourse] = course.getCourseName();
+                    currentCourse++;
+                }
+            }
+
+            // for how many TAs each course needs
+            int taskCounter = 0;
+            for (int i = 0; i < CourseManager.courses.size(); i++) {
+                for (int j = 0; j < (int) CourseManager.courses.get(i).getAssistants(); j++) {
+                    costs[current][taskCounter] = taskCost.get(taskCounter);
+                    taskCounter++;
+                }
+            }
+            current++;
+        }
+    }
+
+    public void execute() {
+//        costs = new float[][]{{0.5f, 2.5f, 1f, 2.5f},
+//                              {0, 2.5f, 2.5f, 3f},
+//                              {1f, 4f, 2.5f, 5f},
+//                              {0, 2, 5, 4}};
+//
+//        totalStudents = costs.length;
+//        totalTasks = costs[0].length;
+
+//        generateRandom();
+
+        matrix = new float[totalStudents][totalTasks];
+        for (int i = 0; i < totalStudents; i++) {
+            System.arraycopy(costs[i], 0, matrix[i], 0, totalTasks);
+        }
+
+        // step 1
+        reduceRows();
+
+        // step 2
+        reduceCols();
+
+        // step 3
+        int[][] starredZeroes = new int[totalStudents][totalTasks];
+        for (int i = 0; i < totalStudents; i++) {
+            Arrays.fill(starredZeroes[i], 0);
+        }
+
+        int[] starredRows = new int[totalStudents];
+        Arrays.fill(starredRows, 0);
+
+        int[] starredCols = new int[totalTasks];
+        Arrays.fill(starredCols, 0);
+
+//        for (int i = 0; i < totalStudents; i++) {
+//            for (int j = 0; j < totalTasks; j++) {
+//                if (matrix[i][j] == 0 && starredZeroes[i][j] == 0 && starredRows[i] == 0 && starredCols[j] == 0) {
+//                    starredZeroes[i][j] = 1;
+//                    starredRows[i] = 1;
+//                    starredCols[j] = 1;
+//                    break;
+//                }
+//            }
+//        }
+
+        // step 4
+        int[][] primedZeroes = new int[totalStudents][totalTasks];
+
+        int[] coveredRows = new int[totalStudents];
+
+        int[] coveredCols = new int[totalStudents];
+
+        for (int i = 0; i < totalStudents; i++) {
+            Arrays.fill(starredZeroes[i], 0);
+        }
+
+        Arrays.fill(starredRows, 0);
+
+        Arrays.fill(starredCols, 0);
+
+        Arrays.fill(coveredRows, 0);
+        Arrays.fill(coveredCols, 0);
+        for (int i = 0; i < totalStudents; i++) {
+            Arrays.fill(primedZeroes[i], 0);
+        }
+
+        while (starCount(starredZeroes) < totalTasks) {
+            for (int i = 0; i < totalStudents; i++) {
+                for (int j = 0; j < totalTasks; j++) {
+                    if (matrix[i][j] == 0 && starredZeroes[i][j] == 0 && starredRows[i] == 0 && starredCols[j] == 0) {
+                        starredZeroes[i][j] = 1;
+                        starredRows[i] = 1;
+                        starredCols[j] = 1;
+                        break;
+                    }
+                }
+            }
+
+            // Cover all columns containing a (starred) zero
+            for (int j = 0; j < totalTasks; j++) {
+                if (starredInCol(starredZeroes, j)) {
+                    coveredCols[j] = 1;
+                }
+            }
+
+            boolean exitLoop = true;
+            int j = 0;
+            int i = 0;
+
+            while (zeroExists(matrix, starredZeroes, coveredRows, coveredCols, primedZeroes)) {
+                for (int x = 0; x < totalTasks; x++) {
+                    if (starredInCol(starredZeroes, x)) {
+                        coveredCols[x] = 1;
+                    }
+                }
+                boolean change = true;
+                // Find a non-covered zero and prime it
+                if (matrix[i][j] == 0 && coveredRows[i] == 0 && coveredCols[j] == 0 && primedZeroes[i][j] == 0 && starredZeroes[i][j] == 0) {
+                    primedZeroes[i][j] = 1;
+                    exitLoop = false;
+
+                    if (starredInRow(starredZeroes, i)) { //the zero is on the same row as a starred zero
+                        coveredRows[i] = 1;               //cover the corresponding row
+
+                        int colIndex = -1;
+                        for (int k = 0; k < totalTasks; k++) {
+                            if (starredZeroes[i][k] == 1) {
+                                colIndex = k;
+                                break;
+                            }
+                        }
+
+                        coveredCols[colIndex] = 0;      // uncover the column of the starred zero
+                    } else { //the non-covered zero has no assigned zero on its row
+                        adjustPath(starredZeroes, primedZeroes, i, j);
+                        clearCovers(primedZeroes, coveredRows, coveredCols);
+                        i = 0;
+                        j = 0;
+                        change = false;
+                    }
+                }
+
+                if (i == totalStudents-1 && j == totalTasks-1) {
+                    if (exitLoop) {
+                        break;
+                    } else {
+                        exitLoop = true;
+                    }
+                }
+
+                if (change) {
+                    j++;
+                    if (j == totalTasks) {
+                        j = 0;
+                        i++;
+                        if (i == totalStudents) {
+                            i = 0;
+                        }
+                    }
+                }
+            }
+
+
+                System.out.println("adjusted");
+                adjustMatrix(coveredRows, coveredCols);
+        }
+
+        printResults(starredZeroes);
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+
+    private void reduceRows() {
+        for (int i = 0; i < totalStudents; i++) {
+            float min = Float.MAX_VALUE;
+            for (int j = 0; j < totalTasks; j++) {
+                if (matrix[i][j] < min) {
+                    min = matrix[i][j];
+                }
+            }
+
+            for (int j = 0; j < totalTasks; j++) {
+                matrix[i][j] -= min;
+            }
+        }
+    }
+
+    private void reduceCols() {
+        for (int j = 0; j < totalTasks; j++) {
+            float min = Float.MAX_VALUE;
+            for (int i = 0; i < totalStudents; i++) {
+                if (matrix[i][j] < min) {
+                    min = matrix[i][j];
+                }
+            }
+
+            for (int i = 0; i < totalStudents; i++) {
+                matrix[i][j] -= min;
+            }
+        }
+    }
+
+    private boolean starredInRow(int[][] matrix, int row) {
+        for (int j = 0; j < totalTasks; j++) {
+            if (matrix[row][j] == 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean starredInCol(int[][] matrix, int col) {
+        for (int i = 0; i < totalStudents; i++) {
+            if (matrix[i][col] == 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private int starCount(int[][] matrix) {
+        int count = 0;
+        for (int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[i].length; j++) {
+                if (matrix[i][j] == 1) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private boolean zeroExists(float[][] matrix, int[][] starredZeroes, int[] coveredRows, int[] coveredCols, int[][] primedZeroes) {
+        for (int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[i].length; j++) {
+                if (matrix[i][j] == 0 && starredZeroes[i][j] == 0 && coveredRows[i] == 0 && coveredCols[j] == 0 && primedZeroes[i][j] == 0) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private void adjustMatrix(int[] coveredRows, int[] coveredCols) {
+        float min = Float.MAX_VALUE;
+        for (int i = 0; i < totalStudents; i++) {
+            for (int j = 0; j < totalTasks; j++) {
+                if (coveredCols[j] == 0 && coveredRows[i] == 0) {
+                    if (matrix[i][j] < min) {
+                        min = matrix[i][j];
+                    }
+                }
+            }
+        }
+
+        for (int i = 0; i < totalStudents; i++) {
+            for (int j = 0; j < totalTasks; j++) {
+                if (coveredCols[j] == 0 && coveredRows[i] == 0) {
+                    matrix[i][j] -= min;
+                } else if (coveredCols[j] == 1 && coveredRows[i] == 1) {
+                    matrix[i][j] += min;
+                }
+            }
+        }
+    }
+
+    private void adjustPath(int[][] starredZeroes, int[][] primedZeroes, int i, int j) {
+        int[] rowPath = new int[totalStudents * totalTasks];
+        int[] colPath = new int[totalStudents * totalTasks];
+        int pathSize = 0;
+        int col = j;
+        int row = i;
+        boolean[][] visited = new boolean[totalStudents][totalTasks];
+        for (int x = 0; x < totalStudents; x++) {
+            Arrays.fill(visited[x], false);
+        }
+
+        rowPath[0] = row;
+        colPath[0] = col;
+        pathSize++;
+
+        System.out.println(Arrays.deepToString(starredZeroes));
+        System.out.println(Arrays.deepToString(primedZeroes));
+        System.out.println(i + " " + j);
+
+        while (true) {
+            boolean starredFound = false;
+            for (int k = 0; k < totalStudents; k++) {
+                if (starredZeroes[k][col] == 1 && !visited[k][col]) {
+                    rowPath[pathSize] = k;
+                    colPath[pathSize] = col;
+                    visited[k][col] = true;
+                    pathSize++;
+                    starredFound = true;
+                    row = k;
+                    break;
+                }
+            }
+
+            if (!starredFound) { break; }
+
+            boolean f = false;
+            for (int k = 0; k < totalTasks; k++) {
+                if (primedZeroes[row][k] == 1) {
+                    rowPath[pathSize] = row;
+                    colPath[pathSize] = k;
+                    col = k;
+                    pathSize++;
+                    f = true;
+                    break;
+                }
+            }
+            if (!f) {
+                System.out.println("Error: primed not found");
+                System.exit(1);
+            }
+        }
+
+        for (int k = 0; k < pathSize; k++) {
+            int x = rowPath[k];
+            int y = colPath[k];
+
+            if (starredZeroes[x][y] == 1) {
+                starredZeroes[x][y] = 0;
+            } else if (primedZeroes[x][y] == 1) {
+                starredZeroes[x][y] = 1;
+                primedZeroes[x][y] = 0;
+            }
+        }
+    }
+
+    private void clearCovers(int[][] primedZeroes, int[] coveredRows, int[] coveredCols) {
+        for (int k = 0; k < totalStudents; k++) {
+            Arrays.fill(primedZeroes[k], 0);
+        }
+        Arrays.fill(coveredRows, 0);
+        Arrays.fill(coveredCols, 0);
+    }
+
+    private void generateRandom() {
+        Random rand = new Random();
+        int n = rand.nextInt(10) + 3;
+        costs = new float[n][n];
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                float elem = rand.nextInt(6);
+                float adder = rand.nextInt(2);
+
+                elem += 0.5f * adder;
+                if (elem > 5) {
+                    elem = 5;
+                }
+
+                costs[i][j] = elem;
+            }
+        }
+        totalStudents = n;
+        totalTasks = n;
+
+        System.out.println("size: " + n);
+        System.out.println(Arrays.deepToString(costs));
+    }
+
+    public void printResults(int[][] starredZeroes) {
+        float totalCost = 0;
+        for (int i = 0; i < totalStudents; i++) {
+            for (int j = 0; j < totalTasks; j++) {
+                if (starredZeroes[i][j] == 1) {
+                    totalCost += costs[i][j];
+                    System.out.println("Student " + i + " -> Task " + j + " (Cost: " + costs[i][j] + ")");
+                    CourseManager.getCourseByName(taskToCourse[j]).assignTa(StudentManager.students.get(i));
+                    break;
+                }
+            }
+        }
+        System.out.println("Total cost: " + totalCost);
+        System.out.println(Arrays.deepToString(costs));
+    }
+}

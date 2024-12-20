@@ -1,0 +1,20 @@
+.file-uploader-container {
+    background-color: #8685ef;
+    padding: 30px;
+    border-radius: 5px;
+    height: 50vh;
+}
+
+.form-control {
+    background-color: #0a3622;
+    color: #3dd5f3;
+}
+
+
+#general-container {
+    flex: 1;
+    display: flex;
+    height: 100vh;
+    position: absolute;
+}
+.form-control {}
